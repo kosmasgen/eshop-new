@@ -1,8 +1,10 @@
 package com.example.demo.repository;
 
 import com.example.demo.model.Customer;
+import com.example.demo.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
 
 /**
@@ -29,4 +31,12 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
      * @return λίστα πελατών που ταιριάζουν με τα κριτήρια.
      */
     List<Customer> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(String firstName, String lastName);
+
+    /**
+     * Επιστρέφει λίστα πελατών που σχετίζονται με έναν συγκεκριμένο χρήστη.
+     *
+     * @param user ο χρήστης που σχετίζεται με τους πελάτες.
+     * @return λίστα πελατών που ανήκουν στον συγκεκριμένο χρήστη.
+     */
+    List<Customer> findByUser(User user);
 }

@@ -54,7 +54,7 @@ public class OrderController {
      * @return το DTO της παραγγελίας.
      */
     @GetMapping("/{id}")
-    public OrderDTO getOrderById(@PathVariable int id) {
+    public OrderDTO getOrderById(@PathVariable Integer id) {
         return orderService.getOrderById(id);
     }
 
@@ -66,7 +66,7 @@ public class OrderController {
      * @return το ενημερωμένο DTO της παραγγελίας.
      */
     @PutMapping("/{id}")
-    public OrderDTO updateOrder(@PathVariable int id, @RequestBody OrderDTO orderDTO) {
+    public OrderDTO updateOrder(@PathVariable Integer id, @RequestBody OrderDTO orderDTO) {
         return orderService.updateOrder(id, orderDTO);
     }
 
@@ -77,7 +77,7 @@ public class OrderController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteOrder(@PathVariable int id) {
+    public void deleteOrder(@PathVariable Integer id) {
         orderService.deleteOrder(id);
     }
 

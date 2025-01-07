@@ -48,7 +48,7 @@ public class SupplierController {
      * @return το ενημερωμένο DTO του προμηθευτή.
      */
     @PutMapping("/{id}")
-    public ResponseEntity<SupplierDTO> updateSupplier(@PathVariable int id, @Validated @RequestBody SupplierDTO supplierDTO) {
+    public ResponseEntity<SupplierDTO> updateSupplier(@PathVariable Integer id, @Validated @RequestBody SupplierDTO supplierDTO) {
         SupplierDTO updatedSupplier = supplierService.updateSupplier(id, supplierDTO);
         return ResponseEntity.ok(updatedSupplier);
     }
@@ -60,7 +60,7 @@ public class SupplierController {
      * @return μήνυμα επιτυχούς διαγραφής.
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteSupplier(@PathVariable int id) {
+    public ResponseEntity<String> deleteSupplier(@PathVariable Integer id) {
         supplierService.deleteSupplier(id);
         return ResponseEntity.ok("Ο προμηθευτής διαγράφηκε επιτυχώς.");
     }
@@ -72,7 +72,7 @@ public class SupplierController {
      * @return το DTO του προμηθευτή.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<SupplierDTO> getSupplierById(@PathVariable int id) {
+    public ResponseEntity<SupplierDTO> getSupplierById(@PathVariable Integer id) {
         SupplierDTO supplierDTO = supplierService.getSupplierById(id);
         return ResponseEntity.ok(supplierDTO);
     }

@@ -6,60 +6,52 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
 /**
- * Mapper κλάση για τη χαρτογράφηση μεταξύ των οντοτήτων `Customer` και `CustomerDTO`.
- * Παρέχει μεθόδους για τη μετατροπή μεταξύ του μοντέλου και του DTO, καθώς και για την ενημέρωση μιας υπάρχουσας οντότητας.
+ * Mapper για τη χαρτογράφηση μεταξύ της οντότητας Customer και του DTO CustomerDTO.
  */
 @Component
 public class CustomerMapper {
 
-    /**
-     * Το ModelMapper που χρησιμοποιείται για τη χαρτογράφηση των δεδομένων.
-     */
     private final ModelMapper modelMapper;
 
     /**
-     * Κατασκευαστής που αρχικοποιεί το ModelMapper.
+     * Constructor που δέχεται ένα instance του ModelMapper.
+     *
+     * @param modelMapper το ModelMapper που θα χρησιμοποιηθεί.
      */
-    public CustomerMapper() {
-        this.modelMapper = new ModelMapper();
+    public CustomerMapper(ModelMapper modelMapper) {
+        this.modelMapper = modelMapper;
     }
 
     /**
-     * Μετατρέπει μια οντότητα `Customer` σε `CustomerDTO`.
+     * Μετατρέπει μια οντότητα Customer σε DTO CustomerDTO.
      *
-     * @param customer η οντότητα `Customer` που πρόκειται να μετατραπεί.
-     * @return το αντίστοιχο DTO.
+     * @param customer η οντότητα Customer.
+     * @return το αντίστοιχο CustomerDTO.
      */
     public CustomerDTO toDTO(Customer customer) {
         return modelMapper.map(customer, CustomerDTO.class);
     }
 
     /**
-     * Μετατρέπει ένα `CustomerDTO` σε οντότητα `Customer`.
+     * Μετατρέπει ένα DTO CustomerDTO σε οντότητα Customer.
      *
-     * @param customerDTO το DTO που πρόκειται να μετατραπεί.
-     * @return η αντίστοιχη οντότητα `Customer`.
+     * @param customerDTO το DTO CustomerDTO.
+     * @return η αντίστοιχη οντότητα Customer.
      */
     public Customer toEntity(CustomerDTO customerDTO) {
         return modelMapper.map(customerDTO, Customer.class);
     }
 
     /**
-     * Ενημερώνει μια υπάρχουσα οντότητα `Customer` με τα δεδομένα από ένα `CustomerDTO`.
+     * Ενημερώνει μια υπάρχουσα οντότητα Customer με δεδομένα από ένα CustomerDTO.
      *
-     * @param customerDTO το DTO που περιέχει τα νέα δεδομένα.
-     * @param customer    η υπάρχουσα οντότητα που θα ενημερωθεί.
-     * @throws IllegalArgumentException αν επιχειρηθεί αλλαγή του ID.
+     * @param customerDTO το DTO με τα νέα δεδομένα.
+     * @param customer    η οντότητα που θα ενημερωθεί.
      */
     public void updateEntityFromDTO(CustomerDTO customerDTO, Customer customer) {
         if (customerDTO.getId() != null && !customerDTO.getId().equals(customer.getId())) {
             throw new IllegalArgumentException("Δεν επιτρέπεται αλλαγή του ID.");
         }
-        customer.setFirstName(customerDTO.getFirstName());
-        customer.setLastName(customerDTO.getLastName());
-        customer.setTelephone(customerDTO.getTelephone());
-        customer.setAfm(customerDTO.getAfm());
-        customer.setWholesale(customerDTO.isWholesale());
-        customer.setBalance(customerDTO.getBalance());
+        modelMapper.map(customerDTO, customer);
     }
 }

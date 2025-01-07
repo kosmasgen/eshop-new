@@ -11,4 +11,5 @@ public interface CustomerService {
     CustomerDTO updateCustomer(int id, CustomerDTO customerDTO); // Ενημέρωση πελάτη
     void deleteCustomer(int id); // Διαγραφή πελάτη
     List<CustomerDTO> searchCustomers(String name);
+    List<CustomerDTO> getCustomersByUser(String name);
 }

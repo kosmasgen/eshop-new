@@ -2,20 +2,19 @@ package com.example.demo.model;
 
 import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
-import  lombok.Getter;
-import  lombok.Setter;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "products")
 @Getter
 @Setter
 @NoArgsConstructor
-
 public class Product {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private int id;
+    private Integer id;
 
     @Column(name = "product_name", length = 50, nullable = false)
     private String productName;
@@ -36,7 +35,6 @@ public class Product {
 
     @Column(name = "uuid", length = 36, nullable = false)
     private String uuid;
-
 
     @Override
     public String toString() {

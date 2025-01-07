@@ -41,4 +41,14 @@ public class SupplierProductMapper {
     public SupplierProduct toEntity(SupplierProductDTO supplierProductDTO) {
         return modelMapper.map(supplierProductDTO, SupplierProduct.class);
     }
+
+    /**
+     * Ενημερώνει ένα υπάρχον αντικείμενο SupplierProduct με δεδομένα από το SupplierProductDTO.
+     *
+     * @param supplierProductDTO Το DTO που περιέχει τα νέα δεδομένα.
+     * @param supplierProduct Το υπάρχον αντικείμενο SupplierProduct που θα ενημερωθεί.
+     */
+    public void updateEntityFromDTO(SupplierProductDTO supplierProductDTO, SupplierProduct supplierProduct) {
+        modelMapper.map(supplierProductDTO, supplierProduct);
+    }
 }

@@ -2,11 +2,16 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.CustomerDTO;
 import com.example.demo.service.CustomerService;
+import com.example.demo.security.jwt.JwtTokenUtil;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 /**
  * Controller για τη διαχείριση πελατών.
  * Παρέχει endpoints για CRUD λειτουργίες και αναζήτηση πελατών.
@@ -16,15 +21,18 @@ import java.util.List;
 public class CustomerController {
 
     private final CustomerService customerService;
+    private final JwtTokenUtil jwtTokenUtil;
+
     /**
-     * Constructor για την εξάρτηση του CustomerService.
+     * Constructor για την εξάρτηση του CustomerService και JwtTokenUtil.
      *
      * @param customerService η υπηρεσία διαχείρισης πελατών.
+     * @param jwtTokenUtil εργαλείο διαχείρισης JWT tokens.
      */
-
     @Autowired
-    public CustomerController(CustomerService customerService) {
+    public CustomerController(CustomerService customerService, JwtTokenUtil jwtTokenUtil) {
         this.customerService = customerService;
+        this.jwtTokenUtil = jwtTokenUtil;
     }
 
     /**
@@ -34,20 +42,20 @@ public class CustomerController {
      * @return το DTO του δημιουργημένου πελάτη.
      */
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED) // Επιστρέφει HTTP Status 201 όταν δημιουργείται ένας πελάτης
-    public CustomerDTO createCustomer(@RequestBody CustomerDTO customerDTO) {
-        return customerService.createCustomer(customerDTO);
+    public ResponseEntity<CustomerDTO> createCustomer(@Valid @RequestBody CustomerDTO customerDTO) {
+        CustomerDTO createdCustomer = customerService.createCustomer(customerDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdCustomer);
     }
 
-
     /**
-     * Επιστρέφει όλους τους πελάτες.
+     * Επιστρέφει όλους τους πελάτες που σχετίζονται με τον συνδεδεμένο χρήστη.
      *
-     * @return λίστα με όλους τους πελάτες.
+     * @return λίστα με τους πελάτες που σχετίζονται με τον χρήστη.
      */
     @GetMapping
-    public List<CustomerDTO> getAllCustomers() {
-        return customerService.getAllCustomers();
+    public ResponseEntity<List<CustomerDTO>> getAllCustomers() {
+        List<CustomerDTO> customers = customerService.getAllCustomers();
+        return ResponseEntity.ok(customers);
     }
 
     /**
@@ -57,8 +65,9 @@ public class CustomerController {
      * @return το DTO του πελάτη που βρέθηκε.
      */
     @GetMapping("/{id}")
-    public CustomerDTO getCustomerById(@PathVariable int id) {
-        return customerService.getCustomerById(id);
+    public ResponseEntity<CustomerDTO> getCustomerById(@PathVariable Integer id) {
+        CustomerDTO customer = customerService.getCustomerById(id);
+        return ResponseEntity.ok(customer);
     }
 
     /**
@@ -69,8 +78,9 @@ public class CustomerController {
      * @return το DTO του ενημερωμένου πελάτη.
      */
     @PutMapping("/{id}")
-    public CustomerDTO updateCustomer(@PathVariable int id, @RequestBody CustomerDTO customerDTO) {
-        return customerService.updateCustomer(id, customerDTO);
+    public ResponseEntity<CustomerDTO> updateCustomer(@PathVariable Integer id, @Valid @RequestBody CustomerDTO customerDTO) {
+        CustomerDTO updatedCustomer = customerService.updateCustomer(id, customerDTO);
+        return ResponseEntity.ok(updatedCustomer);
     }
 
     /**
@@ -79,9 +89,9 @@ public class CustomerController {
      * @param id το ID του πελάτη που θα διαγραφεί.
      */
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT) // Επιστρέφει HTTP Status 204 για επιτυχημένη διαγραφή
-    public void deleteCustomer(@PathVariable int id) {
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Integer id) {
         customerService.deleteCustomer(id);
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -91,16 +101,11 @@ public class CustomerController {
      * @return λίστα με τους πελάτες που πληρούν τα κριτήρια.
      */
     @GetMapping("/search")
-    public List<CustomerDTO> searchCustomers(@RequestParam String name) {
-        return customerService.searchCustomers(name);
+    public ResponseEntity<List<CustomerDTO>> searchCustomers(@RequestParam(required = false) String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        List<CustomerDTO> customers = customerService.searchCustomers(name);
+        return ResponseEntity.ok(customers);
     }
 }
-
-
-
-
-
-
-
-
-

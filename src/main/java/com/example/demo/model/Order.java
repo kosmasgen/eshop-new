@@ -15,15 +15,12 @@ public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private int id;
+    private Integer id;
 
-    // Συσχέτιση με τον πίνακα suppliers
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "supplier_id", nullable = false)
     private Supplier supplier;
 
-    // Συσχέτιση με τον πίνακα products
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
@@ -32,10 +29,10 @@ public class Order {
     private int quantity;
 
     @Column(name = "price", nullable = false)
-    private double price;
+    private Double price;
 
     @Column(name = "total_price", nullable = false)
-    private double totalPrice;
+    private Double totalPrice;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

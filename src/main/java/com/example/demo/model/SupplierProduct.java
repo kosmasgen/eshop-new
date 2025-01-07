@@ -1,32 +1,32 @@
 package com.example.demo.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Column;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "suppliers_products")
+@Table(name = "suppliers_products",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"supplier_id", "product_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
-
 public class SupplierProduct {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private int id;
+    private Integer id;
 
-    @Column(name = "supplier_id", nullable = false)
-    private int supplierId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id", nullable = false)
+    private Supplier supplier;
 
-    @Column(name = "product_id", nullable = false)
-    private int productId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
+
 
     @Column(name = "quantity", nullable = false)
     private int quantity;
@@ -35,8 +35,8 @@ public class SupplierProduct {
     public String toString() {
         return "Προμηθευτής - Προϊόν {" +
                 "ID=" + id +
-                ", Κωδικός Προμηθευτή=" + supplierId +
-                ", Κωδικός Προϊόντος=" + productId +
+                ", Προμηθευτής=" + (supplier != null ? supplier.getId() : "null") +
+                ", Προϊόν=" + (product != null ? product.getId() : "null") +
                 ", Ποσότητα=" + quantity +
                 '}';
     }

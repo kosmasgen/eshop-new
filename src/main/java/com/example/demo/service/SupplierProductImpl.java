@@ -77,7 +77,7 @@ public class SupplierProductImpl implements SupplierProductService {
      * @return το DTO της σχέσης.
      */
     @Override
-    public SupplierProductDTO getSupplierProductById(int id) {
+    public SupplierProductDTO getSupplierProductById(Integer id) {
         logger.info("Αναζήτηση σύνδεσης προμηθευτή-προϊόντος με ID: {}", id);
 
         SupplierProduct supplierProduct = supplierProductRepository.findById(id)
@@ -98,9 +98,10 @@ public class SupplierProductImpl implements SupplierProductService {
      * @return το ενημερωμένο DTO της σχέσης.
      */
     @Override
-    public SupplierProductDTO updateSupplierProduct(int id, SupplierProductDTO supplierProductDTO) {
+    public SupplierProductDTO updateSupplierProduct(Integer id, SupplierProductDTO supplierProductDTO) {
         logger.info("Αίτημα ενημέρωσης σύνδεσης προμηθευτή-προϊόντος με ID: {}", id);
 
+        // Εύρεση του υπάρχοντος entity
         SupplierProduct existingSupplierProduct = supplierProductRepository.findById(id)
                 .orElseThrow(() -> {
                     logger.error("Η σύνδεση προμηθευτή-προϊόντος με ID {} δεν βρέθηκε.", id);
@@ -109,13 +110,18 @@ public class SupplierProductImpl implements SupplierProductService {
 
         logger.debug("Σύνδεση προμηθευτή-προϊόντος πριν την ενημέρωση: {}", existingSupplierProduct);
 
-        supplierProductMapper.toEntity(supplierProductDTO);
+        // Ενημέρωση του υπάρχοντος entity με δεδομένα από το DTO
+        supplierProductMapper.updateEntityFromDTO(supplierProductDTO, existingSupplierProduct);
 
+        // Αποθήκευση του ενημερωμένου entity
         SupplierProduct updatedSupplierProduct = supplierProductRepository.save(existingSupplierProduct);
 
         logger.info("Η σύνδεση προμηθευτή-προϊόντος με ID {} ενημερώθηκε με επιτυχία.", id);
+
+        // Επιστροφή του ενημερωμένου DTO
         return supplierProductMapper.toDTO(updatedSupplierProduct);
     }
+
 
     /**
      * Διαγράφει μια σχέση προμηθευτή-προϊόντος με βάση το ID της.
@@ -123,7 +129,7 @@ public class SupplierProductImpl implements SupplierProductService {
      * @param id το ID της σχέσης.
      */
     @Override
-    public void deleteSupplierProduct(int id) {
+    public void deleteSupplierProduct(Integer id) {
         logger.info("Αίτημα διαγραφής σύνδεσης προμηθευτή-προϊόντος με ID: {}", id);
 
         if (!supplierProductRepository.existsById(id)) {

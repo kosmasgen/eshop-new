@@ -1,53 +1,69 @@
 package com.example.demo.mapper;
 
+import com.example.demo.dto.ProductDTO;
 import com.example.demo.dto.OrderDTO;
 import com.example.demo.model.Order;
+import com.example.demo.model.Product;
+import com.example.demo.model.Supplier;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
-/**
- * Η κλάση OrderMapper είναι υπεύθυνη για την μετατροπή των οντοτήτων Order σε DTO και το αντίστροφο.
- * Χρησιμοποιεί το ModelMapper για την αντιστοίχιση πεδίων μεταξύ των αντικειμένων.
- */
 @Component
 public class OrderMapper {
 
     private final ModelMapper modelMapper;
+    private final ProductMapper productMapper;
+    private final SupplierMapper supplierMapper;
 
-    /**
-     * Κατασκευαστής που δημιουργεί το αντικείμενο ModelMapper για τη μετατροπή των οντοτήτων.
-     */
-    public OrderMapper() {
-        this.modelMapper = new ModelMapper();
+    public OrderMapper(ModelMapper modelMapper, ProductMapper productMapper, SupplierMapper supplierMapper) {
+        this.modelMapper = modelMapper;
+        this.productMapper = productMapper;
+        this.supplierMapper = supplierMapper;
     }
 
-    /**
-     * Μετατρέπει μια οντότητα Order σε DTO Order.
-     *
-     * @param order Η οντότητα Order.
-     * @return Το αντικείμενο OrderDTO που περιέχει τα δεδομένα από την οντότητα.
-     */
     public OrderDTO toDTO(Order order) {
-        return modelMapper.map(order, OrderDTO.class);
+        OrderDTO dto = modelMapper.map(order, OrderDTO.class);
+        dto.setProductId(order.getProduct().getId());
+        dto.setSupplier(supplierMapper.toDTO(order.getSupplier()));
+        return dto;
     }
 
-    /**
-     * Μετατρέπει ένα DTO Order σε οντότητα Order.
-     *
-     * @param orderDTO Το DTO που περιέχει τα δεδομένα του Order.
-     * @return Η οντότητα Order.
-     */
-    public Order toEntity(OrderDTO orderDTO) {
-        return modelMapper.map(orderDTO, Order.class);
+    public Order createOrderFromProduct(Product product, int quantity) {
+        Order order = new Order();
+        order.setProduct(product);
+        order.setSupplier(product.getSupplier());
+        order.setQuantity(quantity);
+        order.setPrice(product.getPrice());
+        order.setTotalPrice(quantity * product.getPrice());
+        return order;
     }
 
-    /**
-     * Ενημερώνει την υπάρχουσα οντότητα Order με τα δεδομένα από το DTO.
-     *
-     * @param orderDTO Το DTO που περιέχει τα δεδομένα.
-     * @param existingOrder Η υπάρχουσα οντότητα Order που θα ενημερωθεί.
-     */
-    public void toEntity(OrderDTO orderDTO, Order existingOrder) {
-        modelMapper.map(orderDTO, existingOrder);
+    public void updateOrderFromDTO(Order existingOrder, Product product, Supplier supplier, OrderDTO orderDTO) {
+        existingOrder.setProduct(product);
+        existingOrder.setSupplier(supplier);
+        existingOrder.setQuantity(orderDTO.getQuantity());
+        existingOrder.setPrice(product.getPrice());
+        existingOrder.setTotalPrice(orderDTO.getQuantity() * product.getPrice());
+    }
+
+    // Νέα Μέθοδος για τη Δημιουργία Order από ProductDTO
+    public Order createOrderFromProductDTO(ProductDTO productDTO, int quantity) {
+        Product product = productMapper.toEntity(productDTO);
+        Supplier supplier = product.getSupplier();
+
+        Order order = new Order();
+        order.setProduct(product);
+        order.setSupplier(supplier);
+        order.setQuantity(quantity);
+        order.setPrice(product.getPrice());
+        order.setTotalPrice(quantity * product.getPrice());
+        return order;
+    }
+
+    public Order toEntity(OrderDTO orderDTO, Product product, Supplier supplier) {
+        Order order = modelMapper.map(orderDTO, Order.class);
+        order.setProduct(product);
+        order.setSupplier(supplier);
+        return order;
     }
 }

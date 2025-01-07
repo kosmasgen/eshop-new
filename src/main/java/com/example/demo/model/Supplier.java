@@ -20,7 +20,6 @@ import java.util.List;
 public class Supplier {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
     private Integer id;
 
     @Column(name = "first_name", length = 15, nullable = false)
@@ -41,7 +40,6 @@ public class Supplier {
     @OneToMany(mappedBy = "supplier", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Product> products;
 
-
     @Override
     public String toString() {
         return "Προμηθευτής {" +
@@ -53,5 +51,4 @@ public class Supplier {
                 ", Τοποθεσία='" + location + '\'' +
                 '}';
     }
-
 }

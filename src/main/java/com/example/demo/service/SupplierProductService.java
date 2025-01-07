@@ -9,9 +9,9 @@ public interface SupplierProductService {
 
     List<SupplierProductDTO> getAllSupplierProducts();
 
-    SupplierProductDTO getSupplierProductById(int id);
+    SupplierProductDTO getSupplierProductById(Integer id);
 
-    SupplierProductDTO updateSupplierProduct(int id, SupplierProductDTO supplierProductDTO);
+    SupplierProductDTO updateSupplierProduct(Integer id, SupplierProductDTO supplierProductDTO);
 
-    void deleteSupplierProduct(int id);
+    void deleteSupplierProduct(Integer id);
 }

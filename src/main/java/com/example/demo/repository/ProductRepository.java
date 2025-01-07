@@ -27,4 +27,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
      * @return Λίστα από προϊόντα που ανήκουν στην καθορισμένη κατηγορία.
      */
     List<Product> findByCategoryId(int categoryId);
+
+
+
 }

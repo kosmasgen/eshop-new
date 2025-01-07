@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.OrderDTO;
-
+import java.time.LocalDate;
 import java.util.List;
 
 public interface OrderService {
@@ -11,4 +11,6 @@ public interface OrderService {
     void deleteOrder(int id);  // Διαγραφή παραγγελίας
     List<OrderDTO> searchOrders(String productName);  // Αναζήτηση παραγγελιών
     List<OrderDTO> getAllOrders();  // Επιστροφή όλων των παραγγελιών
+    List<OrderDTO> searchOrdersBySupplierId(Integer supplierId);
+    List<OrderDTO> getOrdersBySupplierAndDate(Integer supplierId, LocalDate startDate, LocalDate endDate);
 }

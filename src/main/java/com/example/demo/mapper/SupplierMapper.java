@@ -6,8 +6,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
 /**
- * Η κλάση SupplierMapper είναι υπεύθυνη για τη μετατροπή της οντότητας Supplier σε DTO SupplierDTO και το αντίστροφο.
- * Χρησιμοποιεί το ModelMapper για την αντιστοίχιση πεδίων μεταξύ των αντικειμένων.
+ * Mapper για τη χαρτογράφηση μεταξύ της οντότητας Supplier και του DTO SupplierDTO.
  */
 @Component
 public class SupplierMapper {
@@ -15,17 +14,19 @@ public class SupplierMapper {
     private final ModelMapper modelMapper;
 
     /**
-     * Κατασκευαστής που δημιουργεί το αντικείμενο ModelMapper για τη μετατροπή των οντοτήτων.
+     * Constructor που δέχεται ένα instance του ModelMapper.
+     *
+     * @param modelMapper το ModelMapper που θα χρησιμοποιηθεί.
      */
-    public SupplierMapper() {
-        this.modelMapper = new ModelMapper();
+    public SupplierMapper(ModelMapper modelMapper) {
+        this.modelMapper = modelMapper;
     }
 
     /**
      * Μετατρέπει μια οντότητα Supplier σε DTO SupplierDTO.
      *
-     * @param supplier Η οντότητα Supplier.
-     * @return Το αντικείμενο SupplierDTO που περιέχει τα δεδομένα από την οντότητα.
+     * @param supplier η οντότητα Supplier.
+     * @return το αντίστοιχο SupplierDTO.
      */
     public SupplierDTO toDTO(Supplier supplier) {
         return modelMapper.map(supplier, SupplierDTO.class);
@@ -34,31 +35,29 @@ public class SupplierMapper {
     /**
      * Μετατρέπει ένα DTO SupplierDTO σε οντότητα Supplier.
      *
-     * @param supplierDTO Το DTO που περιέχει τα δεδομένα του Supplier.
-     * @return Η οντότητα Supplier.
+     * @param supplierDTO το DTO SupplierDTO.
+     * @return η αντίστοιχη οντότητα Supplier.
      */
     public Supplier toEntity(SupplierDTO supplierDTO) {
         return modelMapper.map(supplierDTO, Supplier.class);
     }
 
     /**
-     * Ενημερώνει την υπάρχουσα οντότητα Supplier με τα δεδομένα του SupplierDTO.
+     * Ενημερώνει μια υπάρχουσα οντότητα Supplier με δεδομένα από ένα SupplierDTO.
      *
-     * @param supplierDTO Το DTO που περιέχει τα νέα δεδομένα.
-     * @param supplier Η υπάρχουσα οντότητα Supplier που θα ενημερωθεί.
-     * @throws IllegalArgumentException Αν το ID στο DTO είναι διαφορετικό από το ID της οντότητας.
+     * @param supplierDTO το DTO με τα νέα δεδομένα.
+     * @param supplier    η υπάρχουσα οντότητα που θα ενημερωθεί.
      */
     public void updateEntityFromDTO(SupplierDTO supplierDTO, Supplier supplier) {
-        // Έλεγχος αν το ID στο DTO είναι διαφορετικό από το ID της οντότητας
         if (supplierDTO.getId() != null && !supplierDTO.getId().equals(supplier.getId())) {
             throw new IllegalArgumentException("Δεν επιτρέπεται αλλαγή του ID.");
         }
-
-        // Ενημέρωση των πεδίων χειροκίνητα
-        supplier.setFirstName(supplierDTO.getFirstName());
-        supplier.setLastName(supplierDTO.getLastName());
-        supplier.setTelephone(supplierDTO.getTelephone());
-        supplier.setAfm(supplierDTO.getAfm());
-        supplier.setLocation(supplierDTO.getLocation());
+        modelMapper.map(supplierDTO, supplier);
     }
+    public Supplier toEntityWithId(Integer supplierId) {
+        Supplier supplier = new Supplier();
+        supplier.setId(supplierId);
+        return supplier;
+    }
+
 }

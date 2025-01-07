@@ -1,24 +1,23 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.SupplierDTO;
+import com.example.demo.dto.OrderDTO;
+import com.example.demo.exception.ErrorCode;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.mapper.SupplierMapper;
 import com.example.demo.model.Supplier;
 import com.example.demo.repository.SupplierRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
-import com.example.demo.model.Order;
-import com.example.demo.repository.OrderRepository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * Υλοποίηση της διεπαφής SupplierService.
- * Παρέχει λειτουργικότητα για τη διαχείριση προμηθευτών.
- */
 @Service
 public class SupplierImpl implements SupplierService {
 
@@ -26,184 +25,113 @@ public class SupplierImpl implements SupplierService {
 
     private final SupplierRepository supplierRepository;
     private final SupplierMapper supplierMapper;
-    private final OrderRepository orderRepository;
+    private final OrderSupplierCommonService orderSupplierCommonService;
+    private final MessageSource messageSource;
 
-    /**
-     * Κατασκευαστής με dependency injection.
-     *
-     * @param supplierRepository το repository για τους προμηθευτές.
-     * @param supplierMapper το mapper για μετατροπές DTO <-> Entity.
-     * @param orderRepository το repository για τις παραγγελίες.
-     */
-    public SupplierImpl(SupplierRepository supplierRepository, SupplierMapper supplierMapper, OrderRepository orderRepository) {
+    @Autowired
+    public SupplierImpl(SupplierRepository supplierRepository, SupplierMapper supplierMapper,
+                        OrderSupplierCommonService orderSupplierCommonService, MessageSource messageSource) {
         this.supplierRepository = supplierRepository;
         this.supplierMapper = supplierMapper;
-        this.orderRepository = orderRepository;
+        this.orderSupplierCommonService = orderSupplierCommonService;
+        this.messageSource = messageSource;
     }
 
-    /**
-     * Δημιουργεί έναν νέο προμηθευτή.
-     *
-     * @param supplierDTO τα δεδομένα του προμηθευτή.
-     * @return το DTO του δημιουργημένου προμηθευτή.
-     */
     @Override
-    public SupplierDTO createSupplier(SupplierDTO supplierDTO) {
-        logger.info("Ξεκινάει η δημιουργία προμηθευτή: {}", supplierDTO);
-
-        Supplier supplier = supplierMapper.toEntity(supplierDTO);
-        Supplier savedSupplier = supplierRepository.save(supplier);
-
-        logger.info("Ο προμηθευτής δημιουργήθηκε με ID: {}", savedSupplier.getId());
-        return supplierMapper.toDTO(savedSupplier);
-    }
-
-    /**
-     * Ενημερώνει έναν προμηθευτή με βάση το ID του.
-     *
-     * @param id το ID του προμηθευτή.
-     * @param supplierDTO τα δεδομένα της ενημέρωσης.
-     * @return το ενημερωμένο DTO του προμηθευτή.
-     */
-    @Override
-    public SupplierDTO updateSupplier(int id, SupplierDTO supplierDTO) {
-        logger.info("Αίτημα ενημέρωσης προμηθευτή με ID: {}", id);
-
-        Supplier supplier = supplierRepository.findById(id)
-                .orElseThrow(() -> {
-                    logger.error("Ο προμηθευτής με ID {} δεν βρέθηκε.", id);
-                    return new RuntimeException("Ο προμηθευτής με ID " + id + " δεν βρέθηκε.");
-                });
-
-        logger.debug("Προμηθευτής πριν την ενημέρωση: {}", supplier);
-
-        supplierMapper.updateEntityFromDTO(supplierDTO, supplier);
-        Supplier updatedSupplier = supplierRepository.save(supplier);
-
-        logger.info("Ο προμηθευτής με ID {} ενημερώθηκε με επιτυχία.", id);
-        return supplierMapper.toDTO(updatedSupplier);
-    }
-
-    /**
-     * Διαγράφει έναν προμηθευτή με βάση το ID του.
-     *
-     * @param id το ID του προμηθευτή.
-     */
-    @Override
-    public void deleteSupplier(int id) {
-        logger.info("Αίτημα διαγραφής προμηθευτή με ID: {}", id);
-
-        if (supplierRepository.existsById(id)) {
-            supplierRepository.deleteById(id);
-            logger.info("Ο προμηθευτής με ID {} διαγράφηκε με επιτυχία.", id);
-        } else {
-            logger.error("Ο προμηθευτής με ID {} δεν βρέθηκε.", id);
-            throw new RuntimeException("Ο προμηθευτής με ID " + id + " δεν βρέθηκε.");
-        }
-    }
-
-    /**
-     * Επιστρέφει έναν προμηθευτή με βάση το ID του.
-     *
-     * @param id το ID του προμηθευτή.
-     * @return το DTO του προμηθευτή.
-     */
-    @Override
-    public SupplierDTO getSupplierById(int id) {
+    public SupplierDTO getSupplierById(Integer id) {
         logger.info("Αναζήτηση προμηθευτή με ID: {}", id);
-
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> {
                     logger.error("Ο προμηθευτής με ID {} δεν βρέθηκε.", id);
-                    return new RuntimeException("Ο προμηθευτής με ID " + id + " δεν βρέθηκε.");
+                    String localizedMessage = messageSource.getMessage(
+                            ErrorCode.SUPPLIER_NOT_FOUND.getCode(),
+                            new Object[]{id},
+                            LocaleContextHolder.getLocale()
+                    );
+                    return new ResourceNotFoundException(ErrorCode.SUPPLIER_NOT_FOUND, id);
                 });
-
         return supplierMapper.toDTO(supplier);
     }
 
-    /**
-     * Επιστρέφει όλους τους προμηθευτές.
-     *
-     * @return λίστα με όλους τους προμηθευτές.
-     */
     @Override
     public List<SupplierDTO> getAllSuppliers() {
-        logger.info("Αναζητούνται όλοι οι προμηθευτές...");
-
-        List<Supplier> suppliers = supplierRepository.findAll();
-
-        logger.debug("Βρέθηκαν {} προμηθευτές.", suppliers.size());
-        return suppliers.stream()
+        logger.info("Ανάκτηση όλων των προμηθευτών...");
+        return supplierRepository.findAll().stream()
                 .map(supplierMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Αναζητά προμηθευτές με βάση το όνομα ή μέρος του ονόματός τους.
-     *
-     * @param name το όνομα ή μέρος του ονόματος του προμηθευτή.
-     * @return λίστα με τους προμηθευτές που ταιριάζουν.
-     */
     @Override
-    public List<SupplierDTO> findSuppliersByName(String name) {
-        logger.info("Αναζήτηση προμηθευτών με όνομα ή τμήμα ονόματος: {}", name);
+    public SupplierDTO createSupplier(SupplierDTO supplierDTO) {
+        logger.info("Δημιουργία νέου προμηθευτή...");
+        Supplier supplier = supplierMapper.toEntity(supplierDTO);
+        Supplier savedSupplier = supplierRepository.save(supplier);
+        return supplierMapper.toDTO(savedSupplier);
+    }
 
-        List<Supplier> suppliers = supplierRepository.findByFirstNameContainingIgnoreCase(name);
+    @Override
+    public SupplierDTO updateSupplier(Integer id, SupplierDTO supplierDTO) {
+        logger.info("Ενημέρωση προμηθευτή με ID: {}", id);
+        Supplier existingSupplier = supplierRepository.findById(id)
+                .orElseThrow(() -> {
+                    logger.error("Ο προμηθευτής με ID {} δεν βρέθηκε.", id);
+                    String localizedMessage = messageSource.getMessage(
+                            ErrorCode.SUPPLIER_NOT_FOUND.getCode(),
+                            new Object[]{id},
+                            LocaleContextHolder.getLocale()
+                    );
+                    return new ResourceNotFoundException(ErrorCode.SUPPLIER_NOT_FOUND, id);
+                });
 
-        if (suppliers.isEmpty()) {
-            logger.warn("Δεν βρέθηκαν προμηθευτές με το όνομα: {}", name);
+        supplierMapper.updateEntityFromDTO(supplierDTO, existingSupplier);
+        Supplier updatedSupplier = supplierRepository.save(existingSupplier);
+
+        return supplierMapper.toDTO(updatedSupplier);
+    }
+
+    @Override
+    public void deleteSupplier(Integer id) {
+        logger.info("Διαγραφή προμηθευτή με ID: {}", id);
+
+        List<OrderDTO> orders = orderSupplierCommonService.searchOrdersBySupplierId(id);
+
+        if (!orders.isEmpty()) {
+            logger.warn("Ο προμηθευτής με ID {} έχει σχετικές παραγγελίες που θα διαγραφούν.", id);
+            orders.forEach(order -> orderSupplierCommonService.deleteOrder(order.getId()));
         }
 
-        return suppliers.stream()
+        supplierRepository.deleteById(id);
+        logger.info("Ο προμηθευτής με ID {} διαγράφηκε με επιτυχία.", id);
+    }
+
+    @Override
+    public List<SupplierDTO> findSuppliersByName(String name) {
+        logger.info("Αναζήτηση προμηθευτών με όνομα: {}", name);
+        return supplierRepository.findByFirstNameContainingIgnoreCase(name).stream()
                 .map(supplierMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Αναζητά προμηθευτές με βάση την τοποθεσία τους.
-     *
-     * @param location η τοποθεσία του προμηθευτή.
-     * @return λίστα με τους προμηθευτές που ταιριάζουν.
-     */
     @Override
     public List<SupplierDTO> findSuppliersByLocation(String location) {
         logger.info("Αναζήτηση προμηθευτών με τοποθεσία: {}", location);
-
-        List<Supplier> suppliers = supplierRepository.findByLocationContainingIgnoreCase(location);
-
-        if (suppliers.isEmpty()) {
-            logger.warn("Δεν βρέθηκαν προμηθευτές με την τοποθεσία: {}", location);
-        }
-
-        return suppliers.stream()
+        return supplierRepository.findByLocationContainingIgnoreCase(location)
+                .stream()
                 .map(supplierMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Υπολογίζει τον τζίρο ενός προμηθευτή για συγκεκριμένο χρονικό διάστημα.
-     *
-     * @param supplierId το ID του προμηθευτή.
-     * @param startDate η αρχική ημερομηνία.
-     * @param endDate η τελική ημερομηνία.
-     * @return ο συνολικός τζίρος.
-     */
     @Override
     public Double calculateTurnover(Integer supplierId, LocalDate startDate, LocalDate endDate) {
-        logger.info("Υπολογισμός τζίρου για τον προμηθευτή με ID: {}, από {} έως {}", supplierId, startDate, endDate);
+        logger.info("Υπολογισμός τζίρου για τον προμηθευτή με ID: {}", supplierId);
 
-        List<Order> orders = orderRepository.findBySupplierId(supplierId);
+        List<OrderDTO> orders = orderSupplierCommonService.getOrdersBySupplierAndDate(supplierId, startDate, endDate);
 
         double turnover = orders.stream()
-                .filter(order -> {
-                    LocalDate orderDate = order.getCreatedAt().toLocalDate();
-                    return (orderDate.isEqual(startDate) || orderDate.isAfter(startDate)) &&
-                            (orderDate.isEqual(endDate) || orderDate.isBefore(endDate));
-                })
-                .mapToDouble(Order::getTotalPrice)
+                .mapToDouble(OrderDTO::getTotalPrice)
                 .sum();
 
-        logger.info("Ο τζίρος για τον προμηθευτή με ID {} είναι: {}", supplierId, turnover);
+        logger.info("Ο συνολικός τζίρος είναι: {}", turnover);
         return turnover;
     }
 }

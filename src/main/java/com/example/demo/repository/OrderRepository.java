@@ -3,7 +3,7 @@ package com.example.demo.repository;
 import com.example.demo.model.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -35,4 +35,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
      * @return λίστα παραγγελιών που συνδέονται με τον συγκεκριμένο προμηθευτή.
      */
     List<Order> findBySupplierId(Integer supplierId);
+
+    // Αναζήτηση παραγγελιών για συγκεκριμένο προμηθευτή και ημερομηνιακό εύρος
+    List<Order> findBySupplierIdAndCreatedAtBetween(Integer supplierId, LocalDate startDate, LocalDate endDate);
+
 }

@@ -1,15 +1,24 @@
 package com.example.demo.service;
 
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import com.example.demo.dto.CustomerDTO;
+import com.example.demo.exception.ErrorCode;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.mapper.CustomerMapper;
 import com.example.demo.model.Customer;
+import com.example.demo.model.User;
+import com.example.demo.model.Role;
+import com.example.demo.model.ERole;
 import com.example.demo.repository.CustomerRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -21,82 +30,70 @@ public class CustomerImpl implements CustomerService {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomerImpl.class);
 
-    private final CustomerRepository customerRepository; // Το repository για την πρόσβαση στη βάση
-    private final CustomerMapper customerMapper; // Το mapper για μετατροπές DTO <-> Entity
+    private final CustomerRepository customerRepository;
+    private final CustomerMapper customerMapper;
+    private final UserService userService;
+    private final RoleService roleService;
 
-    /**
-     * Κατασκευαστής με dependency injection.
-     *
-     * @param customerRepository το repository των πελατών.
-     * @param customerMapper το mapper για μετατροπές DTO <-> Entity.
-     */
     @Autowired
-    public CustomerImpl(CustomerRepository customerRepository, CustomerMapper customerMapper) {
+    public CustomerImpl(CustomerRepository customerRepository, CustomerMapper customerMapper,
+                        UserService userService, RoleService roleService) {
         this.customerRepository = customerRepository;
         this.customerMapper = customerMapper;
+        this.userService = userService;
+        this.roleService = roleService;
     }
 
-    /**
-     * Δημιουργεί έναν νέο πελάτη.
-     *
-     * @param customerDTO τα δεδομένα του πελάτη.
-     * @return το DTO του δημιουργημένου πελάτη.
-     */
     @Override
     public CustomerDTO createCustomer(CustomerDTO customerDTO) {
         logger.info("Ξεκινάει η δημιουργία πελάτη με AFM: {}", customerDTO.getAfm());
+
         if (customerRepository.existsByAfm(customerDTO.getAfm())) {
             logger.error("Το AFM {} υπάρχει ήδη στη βάση.", customerDTO.getAfm());
             throw new RuntimeException("Το AFM υπάρχει ήδη στη βάση.");
         }
 
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userService.getUserByUsername(username);
+
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            Role userRole = roleService.getRoleByName(ERole.ROLE_USER);
+            user.setRoles(Set.of(userRole));
+            userService.saveUser(user);
+            logger.info("Ο ρόλος ROLE_USER προστέθηκε στον χρήστη: {}", username);
+        }
+
         Customer customer = customerMapper.toEntity(customerDTO);
+        customer.setUser(user);
+
         Customer savedCustomer = customerRepository.save(customer);
 
         logger.info("Ο πελάτης δημιουργήθηκε με επιτυχία: {}", savedCustomer);
         return customerMapper.toDTO(savedCustomer);
     }
 
-    /**
-     * Επιστρέφει όλους τους πελάτες.
-     *
-     * @return λίστα με όλους τους πελάτες.
-     */
     @Override
     public List<CustomerDTO> getAllCustomers() {
         logger.info("Αναζητούνται όλοι οι πελάτες...");
         List<Customer> customers = customerRepository.findAll();
-        logger.debug("Βρέθηκαν {} πελάτες.", customers.size());
         return customers.stream()
                 .map(customerMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Επιστρέφει έναν πελάτη με βάση το ID του.
-     *
-     * @param id το ID του πελάτη.
-     * @return το DTO του πελάτη.
-     */
     @Override
     public CustomerDTO getCustomerById(int id) {
         logger.info("Αναζήτηση πελάτη με ID: {}", id);
+
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> {
                     logger.error("Ο πελάτης με ID {} δεν βρέθηκε.", id);
-                    return new RuntimeException("Ο πελάτης δεν βρέθηκε με το ID: " + id);
+                    return new ResourceNotFoundException(ErrorCode.CUSTOMER_NOT_FOUND, id);
                 });
-        logger.debug("Βρέθηκε πελάτης: {}", customer);
+
         return customerMapper.toDTO(customer);
     }
 
-    /**
-     * Ενημερώνει έναν πελάτη με βάση το ID του.
-     *
-     * @param id το ID του πελάτη.
-     * @param customerDTO τα νέα δεδομένα του πελάτη.
-     * @return το ενημερωμένο DTO του πελάτη.
-     */
     @Override
     public CustomerDTO updateCustomer(int id, CustomerDTO customerDTO) {
         logger.info("Αίτημα ενημέρωσης πελάτη με ID: {}", id);
@@ -104,12 +101,9 @@ public class CustomerImpl implements CustomerService {
         Customer existingCustomer = customerRepository.findById(id)
                 .orElseThrow(() -> {
                     logger.error("Ο πελάτης με ID {} δεν βρέθηκε.", id);
-                    return new RuntimeException("Ο πελάτης δεν βρέθηκε με το ID: " + id);
+                    return new ResourceNotFoundException(ErrorCode.CUSTOMER_NOT_FOUND, id);
                 });
 
-        logger.debug("Πελάτης πριν την ενημέρωση: {}", existingCustomer);
-
-        existingCustomer.setId(id); // Ασφαλίζουμε ότι το ID παραμένει το ίδιο
         customerMapper.updateEntityFromDTO(customerDTO, existingCustomer);
 
         Customer updatedCustomer = customerRepository.save(existingCustomer);
@@ -118,39 +112,46 @@ public class CustomerImpl implements CustomerService {
         return customerMapper.toDTO(updatedCustomer);
     }
 
-    /**
-     * Διαγράφει έναν πελάτη με βάση το ID του.
-     *
-     * @param id το ID του πελάτη.
-     */
     @Override
     public void deleteCustomer(int id) {
         logger.info("Αίτημα διαγραφής πελάτη με ID: {}", id);
         if (!customerRepository.existsById(id)) {
             logger.error("Ο πελάτης με ID {} δεν βρέθηκε.", id);
-            throw new RuntimeException("Ο πελάτης δεν βρέθηκε με το ID: " + id);
+            throw new ResourceNotFoundException(ErrorCode.CUSTOMER_NOT_FOUND, id);
         }
         customerRepository.deleteById(id);
         logger.info("Ο πελάτης με ID {} διαγράφηκε με επιτυχία.", id);
     }
 
-    /**
-     * Αναζητά πελάτες με βάση το όνομα ή τμήμα του ονόματός τους.
-     *
-     * @param name το όνομα ή τμήμα του ονόματος.
-     * @return λίστα πελατών που ταιριάζουν.
-     */
     @Override
     public List<CustomerDTO> searchCustomers(String name) {
         logger.info("Αναζήτηση πελατών με όνομα ή τμήμα ονόματος: {}", name);
-        List<Customer> customers = customerRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(name, name);
+        List<Customer> customers = customerRepository
+                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(name, name);
 
         if (customers.isEmpty()) {
-            logger.error("Δεν βρέθηκαν πελάτες με το όνομα ή το τμήμα ονόματος: {}", name);
-            throw new RuntimeException("Δεν βρέθηκαν πελάτες με το όνομα ή το τμήμα του ονόματος: " + name);
+            logger.warn("Δεν βρέθηκαν πελάτες με το όνομα ή το τμήμα ονόματος: {}", name);
+            return List.of();
         }
 
-        logger.debug("Βρέθηκαν {} πελάτες για το όνομα: {}", customers.size(), name);
+        return customers.stream()
+                .map(customerMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CustomerDTO> getCustomersByUser(String username) {
+        logger.info("Αναζήτηση πελατών για τον χρήστη: {}", username);
+
+        User user = userService.getUserByUsername(username);
+
+        List<Customer> customers = customerRepository.findByUser(user);
+
+        if (customers.isEmpty()) {
+            logger.warn("Δεν βρέθηκαν πελάτες για τον χρήστη: {}", username);
+            return List.of();
+        }
+
         return customers.stream()
                 .map(customerMapper::toDTO)
                 .collect(Collectors.toList());

@@ -1,12 +1,15 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.ProductCategoryDTO;
+import com.example.demo.exception.ErrorCode;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.model.ProductCategory;
 import com.example.demo.repository.ProductCategoryRepository;
 import com.example.demo.mapper.ProductCategoryMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,26 +26,25 @@ public class ProductCategoryImpl implements ProductCategoryService {
 
     private final ProductCategoryRepository productCategoryRepository;
     private final ProductCategoryMapper productCategoryMapper;
+    private final MessageSource messageSource;
 
     /**
      * Κατασκευαστής με dependency injection.
      *
      * @param productCategoryRepository το repository για τις κατηγορίες προϊόντων.
      * @param productCategoryMapper το mapper για μετατροπές DTO <-> Entity.
+     * @param messageSource το MessageSource για διεθνοποίηση.
      */
     @Autowired
     public ProductCategoryImpl(ProductCategoryRepository productCategoryRepository,
-                               ProductCategoryMapper productCategoryMapper) {
+                               ProductCategoryMapper productCategoryMapper,
+                               MessageSource messageSource) {
         this.productCategoryRepository = productCategoryRepository;
         this.productCategoryMapper = productCategoryMapper;
+        this.messageSource = messageSource;
     }
 
-    /**
-     * Δημιουργεί μια νέα κατηγορία προϊόντος.
-     *
-     * @param productCategoryDTO τα δεδομένα της κατηγορίας προϊόντος.
-     * @return το DTO της δημιουργημένης κατηγορίας προϊόντος.
-     */
+    @Override
     public ProductCategoryDTO createProductCategory(ProductCategoryDTO productCategoryDTO) {
         logger.info("Ξεκινάει η δημιουργία κατηγορίας προϊόντος: {}", productCategoryDTO);
 
@@ -53,11 +55,7 @@ public class ProductCategoryImpl implements ProductCategoryService {
         return productCategoryMapper.toDTO(savedCategory);
     }
 
-    /**
-     * Επιστρέφει όλες τις κατηγορίες προϊόντων.
-     *
-     * @return λίστα με όλες τις κατηγορίες προϊόντων.
-     */
+    @Override
     public List<ProductCategoryDTO> getAllProductCategories() {
         logger.info("Αναζητούνται όλες οι κατηγορίες προϊόντων...");
 
@@ -69,41 +67,28 @@ public class ProductCategoryImpl implements ProductCategoryService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Επιστρέφει μια κατηγορία προϊόντος με βάση το ID της.
-     *
-     * @param id το ID της κατηγορίας προϊόντος.
-     * @return το DTO της κατηγορίας προϊόντος.
-     * @throws RuntimeException αν η κατηγορία προϊόντος δεν βρεθεί.
-     */
+    @Override
     public ProductCategoryDTO getProductCategoryById(int id) {
         logger.info("Αναζήτηση κατηγορίας προϊόντος με ID: {}", id);
 
         ProductCategory productCategory = productCategoryRepository.findById(id)
                 .orElseThrow(() -> {
                     logger.error("Η κατηγορία προϊόντος με ID {} δεν βρέθηκε.", id);
-                    return new RuntimeException("Η κατηγορία προϊόντος με ID " + id + " δεν βρέθηκε.");
+                    return new ResourceNotFoundException(ErrorCode.PRODUCT_CATEGORY_NOT_FOUND, id);
                 });
 
         logger.debug("Βρέθηκε κατηγορία προϊόντος: {}", productCategory);
         return productCategoryMapper.toDTO(productCategory);
     }
 
-    /**
-     * Ενημερώνει μια κατηγορία προϊόντος με βάση το ID της.
-     *
-     * @param id το ID της κατηγορίας προϊόντος.
-     * @param productCategoryDTO τα δεδομένα της ενημέρωσης.
-     * @return το ενημερωμένο DTO της κατηγορίας προϊόντος.
-     * @throws RuntimeException αν η κατηγορία προϊόντος δεν βρεθεί.
-     */
+    @Override
     public ProductCategoryDTO updateProductCategory(int id, ProductCategoryDTO productCategoryDTO) {
         logger.info("Αίτημα ενημέρωσης κατηγορίας προϊόντος με ID: {}", id);
 
         ProductCategory existingCategory = productCategoryRepository.findById(id)
                 .orElseThrow(() -> {
                     logger.error("Η κατηγορία προϊόντος με ID {} δεν βρέθηκε.", id);
-                    return new RuntimeException("Η κατηγορία προϊόντος με ID " + id + " δεν βρέθηκε.");
+                    return new ResourceNotFoundException(ErrorCode.PRODUCT_CATEGORY_NOT_FOUND, id);
                 });
 
         logger.debug("Κατηγορία προϊόντος πριν την ενημέρωση: {}", existingCategory);
@@ -115,18 +100,13 @@ public class ProductCategoryImpl implements ProductCategoryService {
         return productCategoryMapper.toDTO(updatedCategory);
     }
 
-    /**
-     * Διαγράφει μια κατηγορία προϊόντος με βάση το ID της.
-     *
-     * @param id το ID της κατηγορίας προϊόντος.
-     * @throws RuntimeException αν η κατηγορία προϊόντος δεν βρεθεί.
-     */
+    @Override
     public void deleteProductCategory(int id) {
         logger.info("Αίτημα διαγραφής κατηγορίας προϊόντος με ID: {}", id);
 
         if (!productCategoryRepository.existsById(id)) {
             logger.error("Η κατηγορία προϊόντος με ID {} δεν βρέθηκε.", id);
-            throw new RuntimeException("Η κατηγορία προϊόντος με ID " + id + " δεν βρέθηκε.");
+            throw new ResourceNotFoundException(ErrorCode.PRODUCT_CATEGORY_NOT_FOUND, id);
         }
 
         productCategoryRepository.deleteById(id);
